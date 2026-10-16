@@ -1,4 +1,4 @@
-"""Servidor Diggfy — Flask."""
+"""Servidor Digfy — Flask."""
 
 from __future__ import annotations
 
@@ -41,12 +41,12 @@ class Database:
             self_conv_id = f"self-{uid}"
             self.conversations[self_conv_id] = {
                 "id": self_conv_id, "name": "Meu espaço",
-                "members": [uid], "last_message": "Bem-vindo ao Diggfy!",
+                "members": [uid], "last_message": "Bem-vindo ao Digfy!",
                 "last_message_time": time.time(), "is_group": False,
             }
             self.messages[self_conv_id] = [{
-                "id": "welcome", "author": "Diggfy",
-                "body": f"Bem-vindo ao Diggfy! Sua identidade privada é {uid}",
+                "id": "welcome", "author": "Digfy",
+                "body": f"Bem-vindo ao Digfy! Sua identidade privada é {uid}",
                 "mine": False, "timestamp": time.time(), "status": "read",
             }]
             return {"id": uid, "token": token, "name": name}
@@ -103,7 +103,7 @@ class Database:
                 if user:
                     name = user["name"]
                     parts = name.strip().split()
-                    initials = (parts[0][0] + (parts[-1][0] if len(parts) > 1 else "")).upper() if parts else "DG"
+                    initials = (parts[0][0] + (parts[-1][0] if len(parts) > 1 else "")).upper() if parts else "DF"
                     result.append({"id": user["id"], "name": name, "initials": initials, "status": user.get("status", "offline")})
             return result
 
@@ -160,7 +160,7 @@ class Database:
                 return self.client_message_ids[client_id]
             user = self.users.get(uid, {})
             message = {
-                "id": client_id, "author": user.get("name", "Diggfy"),
+                "id": client_id, "author": user.get("name", "Digfy"),
                 "author_uid": uid,
                 "body": body, "mine": True, "timestamp": time.time(), "status": "sent",
             }
@@ -244,12 +244,12 @@ def _cors(response):
 
 @app.route("/health", methods=["GET"])
 def health():
-    return jsonify({"ok": True, "app": "Diggfy", "mode": "cloud", "version": "2.0.0"})
+    return jsonify({"ok": True, "app": "Digfy", "mode": "cloud", "version": "2.0.0"})
 
 @app.route("/", methods=["GET"])
 def index():
     return jsonify({
-        "app": "Diggfy Server",
+        "app": "Digfy Server",
         "version": "2.0.0",
         "status": "running",
         "endpoints": ["/health", "/api/register", "/api/login", "/api/users",
