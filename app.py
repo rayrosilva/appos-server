@@ -1,4 +1,4 @@
-"""Servidor Appos — Flask (compatível com Render, Railway, Fly.io, etc.)."""
+"""Servidor Diggfy — Flask."""
 
 from __future__ import annotations
 
@@ -30,7 +30,7 @@ class Database:
 
     def register(self, name: str, password: str | None = None) -> dict[str, Any]:
         with self.lock:
-            uid = f"AP-{secrets.token_hex(4).upper()}"
+            uid = f"{secrets.randbelow(10000):04d}-{secrets.randbelow(10000):04d}"
             token = secrets.token_hex(16)
             self.users[uid] = {
                 "id": uid, "name": name, "password": password,
@@ -41,12 +41,12 @@ class Database:
             self_conv_id = f"self-{uid}"
             self.conversations[self_conv_id] = {
                 "id": self_conv_id, "name": "Meu espaço",
-                "members": [uid], "last_message": "Bem-vindo ao Appos!",
+                "members": [uid], "last_message": "Bem-vindo ao Diggfy!",
                 "last_message_time": time.time(), "is_group": False,
             }
             self.messages[self_conv_id] = [{
-                "id": "welcome", "author": "Appos",
-                "body": f"Bem-vindo ao Appos! Sua identidade privada é {uid}",
+                "id": "welcome", "author": "Diggfy",
+                "body": f"Bem-vindo ao Diggfy! Sua identidade privada é {uid}",
                 "mine": False, "timestamp": time.time(), "status": "read",
             }]
             return {"id": uid, "token": token, "name": name}
@@ -103,7 +103,7 @@ class Database:
                 if user:
                     name = user["name"]
                     parts = name.strip().split()
-                    initials = (parts[0][0] + (parts[-1][0] if len(parts) > 1 else "")).upper() if parts else "AP"
+                    initials = (parts[0][0] + (parts[-1][0] if len(parts) > 1 else "")).upper() if parts else "DG"
                     result.append({"id": user["id"], "name": name, "initials": initials, "status": user.get("status", "offline")})
             return result
 
@@ -160,7 +160,7 @@ class Database:
                 return self.client_message_ids[client_id]
             user = self.users.get(uid, {})
             message = {
-                "id": client_id, "author": user.get("name", "Appos"),
+                "id": client_id, "author": user.get("name", "Diggfy"),
                 "author_uid": uid,
                 "body": body, "mine": True, "timestamp": time.time(), "status": "sent",
             }
@@ -194,10 +194,10 @@ class Database:
     def search_user(self, query: str) -> list[dict[str, Any]]:
         with self.lock:
             results = []
-            if query.startswith("AP-"):
-                user = self.users.get(query)
-                if user:
-                    results.append({"id": user["id"], "name": user["name"], "status": user.get("status", "offline")})
+            normalized = query.strip()
+            user = self.users.get(normalized)
+            if user:
+                results.append({"id": user["id"], "name": user["name"], "status": user.get("status", "offline")})
             for user in self.users.values():
                 if query.lower() in user["name"].lower() and user not in [self.users.get(r["id"]) for r in results]:
                     results.append({"id": user["id"], "name": user["name"], "status": user.get("status", "offline")})
@@ -244,13 +244,13 @@ def _cors(response):
 
 @app.route("/health", methods=["GET"])
 def health():
-    return jsonify({"ok": True, "app": "Appos", "mode": "cloud", "version": "1.0.1"})
+    return jsonify({"ok": True, "app": "Diggfy", "mode": "cloud", "version": "2.0.0"})
 
 @app.route("/", methods=["GET"])
 def index():
     return jsonify({
-        "app": "Appos Server",
-        "version": "1.0.1",
+        "app": "Diggfy Server",
+        "version": "2.0.0",
         "status": "running",
         "endpoints": ["/health", "/api/register", "/api/login", "/api/users",
                        "/api/contacts", "/api/conversations", "/api/messages", "/api/calls"],
