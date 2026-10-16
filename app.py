@@ -138,8 +138,16 @@ class Database:
             self.messages[conv_id] = []
             return conv
 
-    def get_messages(self, conversation_id: str) -> list[dict[str, Any]]:
-        return self.messages.get(conversation_id, [])
+    def get_messages(self, conversation_id: str, viewer_uid: str | None = None) -> list[dict[str, Any]]:
+        msgs = self.messages.get(conversation_id, [])
+        if not viewer_uid:
+            return msgs
+        result = []
+        for m in msgs:
+            copy = dict(m)
+            copy["mine"] = (copy.get("author_uid") == viewer_uid)
+            result.append(copy)
+        return result
 
     def add_message(self, uid: str, payload: dict[str, Any]) -> dict[str, Any]:
         conversation_id = str(payload.get("conversation_id", "")).strip()
@@ -153,6 +161,7 @@ class Database:
             user = self.users.get(uid, {})
             message = {
                 "id": client_id, "author": user.get("name", "Appos"),
+                "author_uid": uid,
                 "body": body, "mine": True, "timestamp": time.time(), "status": "sent",
             }
             self.messages.setdefault(conversation_id, []).append(message)
@@ -346,7 +355,8 @@ def create_dm():
 # Messages
 @app.route("/api/messages/<conversation_id>", methods=["GET"])
 def get_messages(conversation_id):
-    return jsonify(DB.get_messages(conversation_id))
+    uid = _get_uid()
+    return jsonify(DB.get_messages(conversation_id, uid))
 
 @app.route("/api/messages", methods=["POST"])
 def send_message():
